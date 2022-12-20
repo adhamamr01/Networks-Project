@@ -1,4 +1,3 @@
-npm install express
 cd myApp
 npm install express --save
 npm install body-parser --save
