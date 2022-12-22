@@ -112,6 +112,11 @@ app.post("/register", function (req, res) {
     res.redirect("http://localhost:3000/");
   }
 });
+//does not work yet
+app.post("/search",function(req,res){
+  const pages = JSON.parse("pages.json");
+  console.log(pages);
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
