@@ -10,7 +10,7 @@ var MongoClient = require("mongodb").MongoClient;
 var db;
 var error;
 var waiting = [];
-MongoClient.connect("mongodb://localhost:27017", function (err, client) {
+MongoClient.connect("mongodb://127.0.0.1:27017", function (err, client) {
   error = err;
   db = client.db("myDB");
 
