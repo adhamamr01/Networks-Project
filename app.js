@@ -1,23 +1,43 @@
-const mongoose = require("mongoose");
 let alert = require("alert");
 var express = require("express");
 var bodyParser = require("body-parser");
 var fs = require("fs");
 var path = require("path");
+const session = require("express-session");
 var app = express();
 
-mongoose.connect("mongodb://localhost:27017/users");
-var db = mongoose.connection;
-db.on("error", console.log.bind(console, "connection error"));
-db.once("open", function (callback) {
-  console.log("connection succeeded");
+var MongoClient = require("mongodb").MongoClient;
+var db;
+var error;
+var waiting = [];
+MongoClient.connect("mongodb://localhost:27017", function (err, client) {
+  error = err;
+  db = client.db("myDB");
+
+  waiting.forEach(function (callback) {
+    callback(err, client);
+  });
 });
+module.exports = function (callBack) {
+  if (db || error) {
+    callback(error, db);
+  } else {
+    waiting.push(callBack);
+  }
+};
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
 app.use(
   bodyParser.urlencoded({
     extended: true,
+  })
+);
+app.use(
+  session({
+    secret: "secret-word",
+    resave: false,
+    saveUninitialized: false,
   })
 );
 
@@ -28,7 +48,8 @@ app.set("view engine", "ejs");
 // app.use('/api/auth',auth);
 
 app.get("/", function (req, res) {
-  res.render("login");
+  req.session.num += 1;
+  res.render("login",{num: req.session.num});
 });
 app.get("/annapurna", function (req, res) {
   res.render("annapurna");
@@ -78,7 +99,7 @@ app.post("/", async function (req, res) {
     const pass = req.body.password;
 
     const currentuser = await db
-      .collection("users")
+      .collection("myCollection")
       .findOne({ username: user });
 
     if (currentuser.password == pass) {
@@ -97,13 +118,14 @@ app.post("/register", function (req, res) {
   var user = req.body.username;
   var pass = req.body.password;
   var data = {
-    "username": user,
-    "password": pass,
+    username: user,
+    password: pass,
+    want_to_go: [],
   };
-  if (db.collection("users").findOne(user.username) != null) {
+  if (db.collection("myCollection").findOne(user.username) == null) {
     alert("user already exists");
   } else {
-    db.collection("users").insertOne(data, function (err) {
+    db.collection("myCollection").insertOne(data, function (err) {
       if (err) {
         console.log(err);
       } else console.log("Record inserted Successfully");
@@ -112,11 +134,45 @@ app.post("/register", function (req, res) {
     res.redirect("http://localhost:3000/");
   }
 });
-//does not work yet
-app.post("/search",function(req,res){
-  const pages = JSON.parse("pages.json");
-  console.log(pages);
+
+app.get("/search", function (req, res) {
+  res.render("searchresults", { ourlist: [], added: "" });
 });
+const des = JSON.parse(fs.readFileSync("destinations.json"));
+
+app.post("/search", function (req, res) {
+  var sear = req.body.Search.toLowerCase();
+  var result = [];
+  var f = false;
+  des.forEach((element) => {
+    console.log(des);
+    console.log(element.name);
+    console.log(typeof element.name);
+    console.log(sear);
+    console.log(typeof term);
+    console.log(element.name.includes(sear));
+    if (element.name.toLowerCase.includes(sear)) {
+      var obj = { name: element.name, val: element.link };
+      result.push(obj);
+      f = true;
+    }
+  });
+  if (f) {
+    res.render("searchresults", { ourlist: result, added: "" });
+  } else {
+    res.render("searchresults", {
+      ourlist: [],
+      added: "Destination not Found",
+    });
+  }
+});
+
+app.post("/annapurna")
+app.post("/bali")
+app.post("/inca")
+app.post("/paris")
+app.post("/rome")
+app.post("/santorini")
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
