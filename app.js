@@ -48,8 +48,7 @@ app.set("view engine", "ejs");
 // app.use('/api/auth',auth);
 
 app.get("/", function (req, res) {
-  req.session.num += 1;
-  res.render("login",{num: req.session.num});
+  res.render("login");
 });
 app.get("/annapurna", function (req, res) {
   res.render("annapurna");
