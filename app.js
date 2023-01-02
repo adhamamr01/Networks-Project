@@ -10,14 +10,14 @@ var MongoClient = require("mongodb").MongoClient;
 var db;
 var error;
 var waiting = [];
-MongoClient.connect("mongodb://127.0.0.1:27017", function (err, client) {
-  error = err;
-  db = client.db("myDB");
+// MongoClient.connect("mongodb://127.0.0.1:27017", function (err, client) {
+//   error = err;
+//   db = client.db("myDB");
 
-  waiting.forEach(function (callback) {
-    callback(err, client);
-  });
-});
+//   waiting.forEach(function (callback) {
+//     callback(err, client);
+//   });
+// });
 module.exports = function (callBack) {
   if (db || error) {
     callback(error, db);
@@ -144,46 +144,56 @@ app.get("/wanttogo", async function (req, res) {
 });
 
 app.post("/", async function (req, res) {
-  try {
+  // try {
     const user = req.body.username;
     const pass = req.body.password;
 
-    const currentuser = await db
-      .collection("myCollection")
-      .findOne({ username: user });
+    if (user == admin && pass == admin){
+            req.session.context = req.body.username;
+            res.render("home");
 
-    if (currentuser.password == pass) {
-      req.session.context = req.body.username;
-      res.render("home");
-    } else {
-      alert("Incorrect Password");
     }
-  } catch (error) {
-    alert(
-      "Invalid username. Please create an account or enter an existing username"
-    );
-  }
+    else{
+      alert("write admin and admin");
+    }
+    // const currentuser = await db
+    //   .collection("myCollection")
+    //   .findOne({ username: user });
+
+  //   if (currentuser.password == pass) {
+  //     req.session.context = req.body.username;
+  //     res.render("home");
+  //   } else {
+  //     alert("Incorrect Password");
+  //   }
+  // } catch (error) {
+  //   alert(
+  //     "Invalid username. Please create an account or enter an existing username"
+  //   );
+  // }
 });
 
 app.post("/register", async (req, res) => {
   var user = req.body.username;
   var pass = req.body.password;
-  var data = {
-    username: user,
-    password: pass,
-    want_to_go: [],
-  };
-  if (await db.collection("myCollection").findOne({ username: `${user}` })) {
-    alert("user already exists");
-  } else {
-    db.collection("myCollection").insertOne(data, function (err) {
-      if (err) {
-        console.log(err);
-      } else console.log("Record inserted Successfully");
-    });
-    alert("registration successful");
-    res.redirect("http://localhost:3000/");
-  }
+  if(user != null && pass != null)
+  res.render("login");
+  // var data = {
+  //   username: user,
+  //   password: pass,
+  //   want_to_go: [],
+  // };
+  // if (await db.collection("myCollection").findOne({ username: `${user}` })) {
+  //   alert("user already exists");
+  // } else {
+  //   db.collection("myCollection").insertOne(data, function (err) {
+  //     if (err) {
+  //       console.log(err);
+  //     } else console.log("Record inserted Successfully");
+  //   });
+  //   alert("registration successful");
+  //   res.redirect("http://localhost:3000/");
+  // }
 });
 
 app.get("/search", function (req, res) {
