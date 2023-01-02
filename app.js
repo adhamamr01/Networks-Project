@@ -221,9 +221,23 @@ async function wanttogohelp(place, req, res) {
   var user = await db
     .collection("myCollection")
     .findOne({ username: `${req.session.context}` });
-  var list = user.want_to_go;
+  var list = [];
+  if(user.want_to_go == undefined){
+    list = [];
+  }
+  else{
+    list = user.want_to_go;
+  }
+  if(list == undefined){
+    list.push(place);
+    db.collection("myCollection").updateOne(
+      {username: `${req.session.context}`},
+      {$set: { want_to_go: list}}
+    );
+    console.info(list);
+  }
 
-  if (list.includes(place)) {
+  else if (list.includes(place)) {
     alert("this place already exits in your want to go list!");
   } else {
     list.push(place);
