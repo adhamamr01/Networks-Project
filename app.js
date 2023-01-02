@@ -51,45 +51,96 @@ app.get("/", function (req, res) {
   res.render("login");
 });
 app.get("/annapurna", function (req, res) {
-  res.render("annapurna");
+  if (req.session.context) {
+    res.render("annapurna");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/bali", function (req, res) {
-  res.render("bali");
+  if (req.session.context) {
+    res.render("bali");
+  } else {
+    res.render("login");
+  }
 });
 
 app.get("/cities", function (req, res) {
-  res.render("cities");
+  if (req.session.context) {
+    res.render("cities");
+  } else {
+    res.render("login");
+  }
 });
 
 app.get("/hiking", function (req, res) {
-  res.render("hiking");
+  if (req.session.context) {
+    res.render("hiking");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/home", function (req, res) {
-  res.render("home");
+  if (req.session.context) {
+    res.render("home");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/inca", function (req, res) {
-  res.render("inca");
+  if (req.session.context) {
+    res.render("inca");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/islands", function (req, res) {
-  res.render("islands");
+  if (req.session.context) {
+    res.render("islands");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/paris", function (req, res) {
-  res.render("paris");
+  if (req.session.context) {
+    res.render("paris");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/registration", function (req, res) {
   res.render("registration");
 });
 app.get("/rome", function (req, res) {
-  res.render("rome");
+  if (req.session.context) {
+    res.render("rome");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/santorini", function (req, res) {
-  res.render("santorini");
+  if (req.session.context) {
+    res.render("santorini");
+  } else {
+    res.render("login");
+  }
 });
 app.get("/searchresults", function (req, res) {
-  res.render("searchresults");
+  if (req.session.context) {
+    res.render("searchresults");
+  } else {
+    res.render("login");
+  }
 });
-app.get("/wanttogo", function (req, res) {
-  res.render("wanttogo");
+app.get("/wanttogo", async function (req, res) {
+  if (req.session.context) {
+    const user = await db
+      .collection("myCollection")
+      .findOne({ username: `${req.session.context}` });
+    res.render("wanttogo", { myList: user.want_to_go });
+  } else {
+    res.render("login");
+  }
 });
 
 app.post("/", async function (req, res) {
@@ -102,7 +153,8 @@ app.post("/", async function (req, res) {
       .findOne({ username: user });
 
     if (currentuser.password == pass) {
-      res.redirect("http://localhost:3000/home");
+      req.session.context = req.body.username;
+      res.render("home");
     } else {
       alert("Incorrect Password");
     }
@@ -113,7 +165,7 @@ app.post("/", async function (req, res) {
   }
 });
 
-app.post("/register", function (req, res) {
+app.post("/register", async (req, res) => {
   var user = req.body.username;
   var pass = req.body.password;
   var data = {
@@ -121,7 +173,7 @@ app.post("/register", function (req, res) {
     password: pass,
     want_to_go: [],
   };
-  if (db.collection("myCollection").findOne(user.username) == null) {
+  if (await db.collection("myCollection").findOne({ username: `${user}` })) {
     alert("user already exists");
   } else {
     db.collection("myCollection").insertOne(data, function (err) {
@@ -150,7 +202,7 @@ app.post("/search", function (req, res) {
     console.log(sear);
     console.log(typeof term);
     console.log(element.name.includes(sear));
-    if (element.name.toLowerCase.includes(sear)) {
+    if (element.name.toLowerCase().includes(sear)) {
       var obj = { name: element.name, val: element.link };
       result.push(obj);
       f = true;
@@ -165,13 +217,42 @@ app.post("/search", function (req, res) {
     });
   }
 });
+async function wanttogohelp(place, req, res) {
+  var user = await db
+    .collection("myCollection")
+    .findOne({ username: `${req.session.context}` });
+  var list = user.want_to_go;
 
-app.post("/annapurna")
-app.post("/bali")
-app.post("/inca")
-app.post("/paris")
-app.post("/rome")
-app.post("/santorini")
+  if (list.includes(place)) {
+    alert("this place already exits in your want to go list!");
+  } else {
+    list.push(place);
+    db.collection("myCollection").updateOne(
+      { username: `${req.session.context}` },
+      { $set: { want_to_go: list } }
+    );
+    console.info(list);
+  }
+}
+
+app.post("/annapurna", async (req, res) => {
+  wanttogohelp("Annapurna Circuit", req, res);
+});
+app.post("/bali", async (req, res) => {
+  wanttogohelp("Bali Island", req, res);
+});
+app.post("/inca", async (req, res) => {
+  wanttogohelp("Inca Trail to Machu Picchu", req, res);
+});
+app.post("/paris", async (req, res) => {
+  wanttogohelp("Paris", req, res);
+});
+app.post("/rome", async (req, res) => {
+  wanttogohelp("Rome", req, res);
+});
+app.post("/santorini", async (req, res) => {
+  wanttogohelp("Santorini Island", req, res);
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
